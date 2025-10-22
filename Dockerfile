@@ -20,7 +20,7 @@ WORKDIR /root/
 COPY --from=builder /app/door-control .
 COPY --from=builder /app/templates ./templates
 COPY --from=builder /app/static ./static
-COPY --from=builder /app/internal/db/schema.sql ./internal/db/schema.sql
+COPY --from=builder /app/internal ./internal
 
 EXPOSE 8080
 

@@ -57,5 +57,24 @@ func Setup(database *db.DB, webAuthn *webauthn.WebAuthn, store *sessions.CookieS
 	http.HandleFunc("/bookings", bookingHandler.GetUserBookings)
 	http.HandleFunc("/unlock", bookingHandler.UnlockDoor)
 
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/static/", http.StripPrefix("/static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		if len(path) > 3 {
+			ext := path[len(path)-3:]
+			if ext == ".js" {
+				w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+			} else if len(path) > 4 {
+				ext4 := path[len(path)-4:]
+				if ext4 == ".jpg" || ext4 == "jpeg" {
+					w.Header().Set("Content-Type", "image/jpeg")
+				} else if ext4 == ".png" {
+					w.Header().Set("Content-Type", "image/png")
+				} else if ext4 == ".css" {
+					w.Header().Set("Content-Type", "text/css; charset=utf-8")
+				}
+			}
+		}
+		fs.ServeHTTP(w, r)
+	})))
 }
