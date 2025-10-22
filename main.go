@@ -43,8 +43,7 @@ func main() {
 		SameSite: http.SameSiteLaxMode,
 	}
 
-	tmpl := template.Must(template.New("").ParseGlob("templates/**/*.html"))
-	tmpl = template.Must(tmpl.ParseGlob("templates/*.html"))
+	tmpl := template.Must(template.ParseGlob("templates/*.html"))
 
 	routes.Setup(database, webAuthn, store, tmpl)
 
