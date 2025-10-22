@@ -20,8 +20,8 @@ func main() {
 
 	wconfig := &webauthn.Config{
 		RPDisplayName: "Door Control",
-		RPID:          "172.20.10.3",
-		RPOrigins:     []string{"https://172.20.10.3", "http://localhost:8080"},
+		RPID:          "doorctrl.sooth.dev",
+		RPOrigins:     []string{"https://doorctrl.sooth.dev", "http://localhost:8080"},
 	}
 
 	webAuthn, err := webauthn.New(wconfig)
@@ -34,7 +34,7 @@ func main() {
 		Path:     "/",
 		MaxAge:   3600 * 24,
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   true,
 		SameSite: http.SameSiteLaxMode,
 	}
 
@@ -77,9 +77,8 @@ func main() {
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
-	log.Println("Server starting on http://localhost:8080")
+	log.Println("Server starting on :8080")
+	log.Println("Production URL: https://doorctrl.sooth.dev")
 	log.Println("Local access: http://localhost:8080")
-	log.Println("iPhone access (via Caddy): https://172.20.10.3")
-	log.Println("Run 'caddy run' in the project directory to enable HTTPS")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
