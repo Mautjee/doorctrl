@@ -60,23 +60,24 @@ func (db *DB) GetUserByUsername(username string) (int64, string, error) {
 	return id, displayName, err
 }
 
-func (db *DB) SaveCredential(userID int64, credentialID, publicKey []byte) error {
+func (db *DB) SaveCredential(userID int64, credentialID, publicKey []byte, backupEligible, backupState bool) error {
 	_, err := db.Exec(
-		"INSERT INTO credentials (user_id, credential_id, public_key) VALUES (?, ?, ?)",
-		userID, credentialID, publicKey,
+		"INSERT INTO credentials (user_id, credential_id, public_key, backup_eligible, backup_state) VALUES (?, ?, ?, ?, ?)",
+		userID, credentialID, publicKey, backupEligible, backupState,
 	)
 	return err
 }
 
-func (db *DB) GetCredential(credentialID []byte) (int64, []byte, int, error) {
+func (db *DB) GetCredential(credentialID []byte) (int64, []byte, int, bool, bool, error) {
 	var userID int64
 	var publicKey []byte
 	var signCount int
+	var backupEligible, backupState bool
 	err := db.QueryRow(
-		"SELECT user_id, public_key, sign_count FROM credentials WHERE credential_id = ?",
+		"SELECT user_id, public_key, sign_count, backup_eligible, backup_state FROM credentials WHERE credential_id = ?",
 		credentialID,
-	).Scan(&userID, &publicKey, &signCount)
-	return userID, publicKey, signCount, err
+	).Scan(&userID, &publicKey, &signCount, &backupEligible, &backupState)
+	return userID, publicKey, signCount, backupEligible, backupState, err
 }
 
 func (db *DB) UpdateSignCount(credentialID []byte, signCount int) error {

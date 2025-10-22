@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS credentials (
     credential_id BLOB UNIQUE NOT NULL,
     public_key BLOB NOT NULL,
     sign_count INTEGER DEFAULT 0,
+    backup_eligible INTEGER DEFAULT 0,
+    backup_state INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );

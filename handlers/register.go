@@ -123,7 +123,7 @@ func (h *RegisterHandler) FinishRegistration(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err := h.DB.SaveCredential(userID, credential.ID, credential.PublicKey); err != nil {
+	if err := h.DB.SaveCredential(userID, credential.ID, credential.PublicKey, credential.Flags.BackupEligible, credential.Flags.BackupState); err != nil {
 		log.Printf("Error saving credential: %v", err)
 		http.Error(w, "Failed to save credential", http.StatusInternalServerError)
 		return

@@ -42,7 +42,7 @@ func LoadUserCredentials(database *db.DB, userID int64) ([]webauthn.Credential, 
 
 	var credentials []webauthn.Credential
 	for _, credID := range credIDs {
-		_, publicKey, signCount, err := database.GetCredential(credID)
+		_, publicKey, signCount, backupEligible, backupState, err := database.GetCredential(credID)
 		if err != nil {
 			continue
 		}
@@ -51,6 +51,10 @@ func LoadUserCredentials(database *db.DB, userID int64) ([]webauthn.Credential, 
 			ID:              credID,
 			PublicKey:       publicKey,
 			AttestationType: "none",
+			Flags: webauthn.CredentialFlags{
+				BackupEligible: backupEligible,
+				BackupState:    backupState,
+			},
 			Authenticator: webauthn.Authenticator{
 				SignCount: uint32(signCount),
 			},
