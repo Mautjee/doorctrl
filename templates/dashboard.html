@@ -12,7 +12,7 @@
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #000;
             min-height: 100vh;
             padding: 40px 20px;
         }
@@ -21,14 +21,28 @@
             margin: 0 auto;
         }
         .card {
-            background: white;
+            background: #fff;
             border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(255,255,255,0.1);
             padding: 40px;
             margin-bottom: 20px;
+            text-align: center;
+        }
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+        }
+        .studio-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: #000;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         h1 {
-            color: #333;
+            color: #000;
             margin-bottom: 10px;
             font-size: 32px;
         }
@@ -71,7 +85,7 @@
         }
         button {
             padding: 14px 28px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #000;
             color: white;
             border: none;
             border-radius: 8px;
@@ -82,51 +96,61 @@
         }
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
         }
         button:active {
             transform: translateY(0);
         }
         .logout-btn {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: #666;
+        }
+        .logout-btn:hover {
+            background: #444;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card">
-            <h1>Dashboard</h1>
-            <p class="subtitle">Welcome back! You are successfully authenticated.</p>
+            <img src="/static/logo.jpg" alt="Waterhouse Studios" class="logo">
+            <div class="studio-name">Waterhouse Studios</div>
+            <h1>✓ Access Granted</h1>
+            <p class="subtitle">Welcome to the studio! The door is now unlocked.</p>
             
             <div class="info-section">
                 <div class="info-item">
-                    <span class="info-label">User ID:</span>
-                    <span class="info-value">{{.UserID}}</span>
-                </div>
-                <div class="info-item">
-                    <span class="info-label">Display Name:</span>
+                    <span class="info-label">Name:</span>
                     <span class="info-value">{{.DisplayName}}</span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">Authentication Status:</span>
-                    <span class="success-badge">Authenticated via Biometrics</span>
+                    <span class="info-label">Username:</span>
+                    <span class="info-value">{{.UserID}}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Access Status:</span>
+                    <span class="success-badge">🔓 Door Unlocked</span>
                 </div>
             </div>
             
             <form action="/logout" method="POST">
-                <button type="submit" class="logout-btn">Logout</button>
+                <button type="submit" class="logout-btn">End Session</button>
             </form>
         </div>
         
         <div class="card">
-            <h2 style="color: #333; margin-bottom: 16px;">About This Authentication</h2>
+            <h2 style="color: #000; margin-bottom: 16px;">🎵 24-Hour Studio Access</h2>
             <p style="color: #666; line-height: 1.6; margin-bottom: 12px;">
-                You are authenticated using <strong>WebAuthn</strong> with biometric verification. 
-                Your private key never leaves your device and is stored securely in your device's secure enclave.
+                This is a proof-of-concept for secure studio access using <strong>WebAuthn biometric authentication</strong>.
             </p>
-            <p style="color: #666; line-height: 1.6;">
-                This authentication method supports Face ID, Touch ID, fingerprint scanners, and other platform authenticators.
+            <p style="color: #666; line-height: 1.6; margin-bottom: 12px;">
+                <strong>How it works:</strong>
             </p>
+            <ul style="color: #666; line-height: 1.8; margin-left: 20px;">
+                <li>Scan the NFC tag on the door to open this page</li>
+                <li>Authenticate with Face ID or Touch ID</li>
+                <li>Server verifies your identity and unlocks the door</li>
+                <li>Your biometric data never leaves your device</li>
+            </ul>
         </div>
     </div>
 </body>
