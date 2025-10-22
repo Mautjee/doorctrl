@@ -173,25 +173,17 @@
             const startDateTime = new Date(`${date}T${startTime}:00`);
             const endDateTime = new Date(startDateTime.getTime() + duration * 60 * 60 * 1000);
             
-            const formatDateTime = (dt) => {
-                const year = dt.getFullYear();
-                const month = String(dt.getMonth() + 1).padStart(2, '0');
-                const day = String(dt.getDate()).padStart(2, '0');
-                const hours = String(dt.getHours()).padStart(2, '0');
-                const minutes = String(dt.getMinutes()).padStart(2, '0');
-                const seconds = String(dt.getSeconds()).padStart(2, '0');
-                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-            };
+            const startUnix = Math.floor(startDateTime.getTime() / 1000);
+            const endUnix = Math.floor(endDateTime.getTime() / 1000);
             
             try {
-                const formData = new URLSearchParams();
-                formData.append('start_time', formatDateTime(startDateTime));
-                formData.append('end_time', formatDateTime(endDateTime));
-                
                 const response = await fetch('/booking/create', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        start_time: startUnix,
+                        end_time: endUnix
+                    })
                 });
                 
                 if (!response.ok) {

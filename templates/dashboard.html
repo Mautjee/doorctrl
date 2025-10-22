@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Biometric Auth</title>
+    <script src="/static/js/time-utils.js"></script>
     <style>
         * {
             margin: 0;
@@ -129,7 +130,7 @@
                 </div>
                 <div class="info-item">
                     <span class="info-label">Time Slot:</span>
-                    <span class="info-value">{{.ActiveBooking.start_time}} - {{.ActiveBooking.end_time}}</span>
+                    <span class="info-value" id="activeBookingTime"></span>
                 </div>
                 {{else}}
                 <div class="info-item">
@@ -159,17 +160,7 @@
         <div class="card">
             <h2 style="color: #000; margin-bottom: 16px;">📅 Your Bookings</h2>
             {{if .Bookings}}
-            <div style="text-align: left;">
-                {{range .Bookings}}
-                <div style="background: #f7f9fc; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <strong style="color: #000;">{{.start_time}}</strong>
-                        <span style="padding: 4px 12px; background: {{if eq .status "active"}}#d4edda{{else}}#f8d7da{{end}}; color: {{if eq .status "active"}}#155724{{else}}#721c24{{end}}; border-radius: 12px; font-size: 12px; font-weight: 600;">{{.status}}</span>
-                    </div>
-                    <div style="color: #666; font-size: 14px;">Until: {{.end_time}}</div>
-                </div>
-                {{end}}
-            </div>
+            <div style="text-align: left;" id="bookingsList"></div>
             {{else}}
             <p style="color: #666;">No bookings yet. Create your first booking to access the studio!</p>
             {{end}}
@@ -177,6 +168,34 @@
     </div>
     
     <script>
+        // Format active booking time
+        {{if .HasActiveBooking}}
+        const activeStart = {{.ActiveBooking.start_time}};
+        const activeEnd = {{.ActiveBooking.end_time}};
+        document.getElementById('activeBookingTime').textContent = 
+            formatUnixTimestamp(activeStart, 'short') + ' - ' + formatUnixTimestamp(activeEnd, 'time');
+        {{end}}
+
+        // Format all bookings
+        const bookingsData = {{.Bookings}};
+        if (bookingsData && bookingsData.length > 0) {
+            const bookingsList = document.getElementById('bookingsList');
+            bookingsData.forEach(booking => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background: #f7f9fc; border-radius: 8px; padding: 16px; margin-bottom: 12px;';
+                
+                const isActive = booking.status === 'active';
+                div.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong style="color: #000;">${formatUnixTimestamp(booking.start_time, 'short')}</strong>
+                        <span style="padding: 4px 12px; background: ${isActive ? '#d4edda' : '#f8d7da'}; color: ${isActive ? '#155724' : '#721c24'}; border-radius: 12px; font-size: 12px; font-weight: 600;">${booking.status}</span>
+                    </div>
+                    <div style="color: #666; font-size: 14px;">Until: ${formatUnixTimestamp(booking.end_time, 'time')}</div>
+                `;
+                bookingsList.appendChild(div);
+            });
+        }
+
         const unlockBtn = document.getElementById('unlockBtn');
         const unlockMessage = document.getElementById('unlockMessage');
         

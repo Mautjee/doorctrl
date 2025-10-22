@@ -39,10 +39,10 @@ func InitDB(filepath string) (*DB, error) {
 	return &DB{db}, nil
 }
 
-func (db *DB) CreateUser(username, displayName string) (int64, error) {
+func (db *DB) CreateUser(username, displayName string, createdAt int64) (int64, error) {
 	result, err := db.Exec(
-		"INSERT INTO users (username, display_name) VALUES (?, ?)",
-		username, displayName,
+		"INSERT INTO users (username, display_name, created_at) VALUES (?, ?, ?)",
+		username, displayName, createdAt,
 	)
 	if err != nil {
 		return 0, err
@@ -60,10 +60,10 @@ func (db *DB) GetUserByUsername(username string) (int64, string, error) {
 	return id, displayName, err
 }
 
-func (db *DB) SaveCredential(userID int64, credentialID, publicKey []byte, backupEligible, backupState bool) error {
+func (db *DB) SaveCredential(userID int64, credentialID, publicKey []byte, backupEligible, backupState bool, createdAt int64) error {
 	_, err := db.Exec(
-		"INSERT INTO credentials (user_id, credential_id, public_key, backup_eligible, backup_state) VALUES (?, ?, ?, ?, ?)",
-		userID, credentialID, publicKey, backupEligible, backupState,
+		"INSERT INTO credentials (user_id, credential_id, public_key, backup_eligible, backup_state, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+		userID, credentialID, publicKey, backupEligible, backupState, createdAt,
 	)
 	return err
 }
@@ -109,10 +109,10 @@ func (db *DB) GetCredentialsByUserID(userID int64) ([][]byte, error) {
 	return credentials, nil
 }
 
-func (db *DB) CreateBooking(userID int64, startTime, endTime string) (int64, error) {
+func (db *DB) CreateBooking(userID, startTime, endTime, createdAt int64) (int64, error) {
 	result, err := db.Exec(
-		"INSERT INTO bookings (user_id, start_time, end_time) VALUES (?, ?, ?)",
-		userID, startTime, endTime,
+		"INSERT INTO bookings (user_id, start_time, end_time, created_at) VALUES (?, ?, ?, ?)",
+		userID, startTime, endTime, createdAt,
 	)
 	if err != nil {
 		return 0, err
@@ -132,8 +132,8 @@ func (db *DB) GetUserBookings(userID int64) ([]map[string]interface{}, error) {
 
 	var bookings []map[string]interface{}
 	for rows.Next() {
-		var id int64
-		var startTime, endTime, status, createdAt string
+		var id, startTime, endTime, createdAt int64
+		var status string
 		if err := rows.Scan(&id, &startTime, &endTime, &status, &createdAt); err != nil {
 			return nil, err
 		}
@@ -148,9 +148,9 @@ func (db *DB) GetUserBookings(userID int64) ([]map[string]interface{}, error) {
 	return bookings, nil
 }
 
-func (db *DB) GetActiveBooking(userID int64, currentTime string) (map[string]interface{}, error) {
-	var id int64
-	var startTime, endTime, status string
+func (db *DB) GetActiveBooking(userID, currentTime int64) (map[string]interface{}, error) {
+	var id, startTime, endTime int64
+	var status string
 	err := db.QueryRow(
 		"SELECT id, start_time, end_time, status FROM bookings WHERE user_id = ? AND start_time <= ? AND end_time >= ? AND status = 'active' LIMIT 1",
 		userID, currentTime, currentTime,
@@ -168,7 +168,7 @@ func (db *DB) GetActiveBooking(userID int64, currentTime string) (map[string]int
 	}, nil
 }
 
-func (db *DB) CheckBookingConflict(userID int64, startTime, endTime string) (bool, error) {
+func (db *DB) CheckBookingConflict(userID, startTime, endTime int64) (bool, error) {
 	var count int
 	err := db.QueryRow(
 		"SELECT COUNT(*) FROM bookings WHERE user_id = ? AND status = 'active' AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?) OR (start_time >= ? AND end_time <= ?))",

@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/gorilla/sessions"
@@ -45,7 +46,7 @@ func (h *RegisterHandler) BeginRegistration(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	userID, err = h.DB.CreateUser(username, displayName)
+	userID, err = h.DB.CreateUser(username, displayName, time.Now().Unix())
 	if err != nil {
 		log.Printf("Error creating user: %v", err)
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
@@ -123,7 +124,7 @@ func (h *RegisterHandler) FinishRegistration(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err := h.DB.SaveCredential(userID, credential.ID, credential.PublicKey, credential.Flags.BackupEligible, credential.Flags.BackupState); err != nil {
+	if err := h.DB.SaveCredential(userID, credential.ID, credential.PublicKey, credential.Flags.BackupEligible, credential.Flags.BackupState, time.Now().Unix()); err != nil {
 		log.Printf("Error saving credential: %v", err)
 		http.Error(w, "Failed to save credential", http.StatusInternalServerError)
 		return

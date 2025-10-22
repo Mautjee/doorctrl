@@ -56,15 +56,22 @@ func (h *BookingHandler) CreateBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	startTime := r.FormValue("start_time")
-	endTime := r.FormValue("end_time")
+	var requestData struct {
+		StartTime int64 `json:"start_time"`
+		EndTime   int64 `json:"end_time"`
+	}
 
-	if startTime == "" || endTime == "" {
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		http.Error(w, "Invalid request data", http.StatusBadRequest)
+		return
+	}
+
+	if requestData.StartTime == 0 || requestData.EndTime == 0 {
 		http.Error(w, "Start time and end time required", http.StatusBadRequest)
 		return
 	}
 
-	conflict, err := h.DB.CheckBookingConflict(userID, startTime, endTime)
+	conflict, err := h.DB.CheckBookingConflict(userID, requestData.StartTime, requestData.EndTime)
 	if err != nil {
 		log.Printf("Error checking booking conflict: %v", err)
 		http.Error(w, "Database error", http.StatusInternalServerError)
@@ -76,7 +83,7 @@ func (h *BookingHandler) CreateBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	bookingID, err := h.DB.CreateBooking(userID, startTime, endTime)
+	bookingID, err := h.DB.CreateBooking(userID, requestData.StartTime, requestData.EndTime, time.Now().Unix())
 	if err != nil {
 		log.Printf("Error creating booking: %v", err)
 		http.Error(w, "Failed to create booking", http.StatusInternalServerError)
@@ -137,7 +144,7 @@ func (h *BookingHandler) UnlockDoor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentTime := time.Now().Format("2006-01-02 15:04:05")
+	currentTime := time.Now().Unix()
 	booking, err := h.DB.GetActiveBooking(userID, currentTime)
 	if err != nil {
 		log.Printf("No active booking: %v", err)
