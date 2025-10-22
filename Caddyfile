@@ -1,0 +1,9 @@
+{
+    local_certs  # Caddy issues mkcert-style certs automatically
+}
+
+door-control.local {
+
+    # Everything else hits your real dev server
+    reverse_proxy localhost:3001
+}

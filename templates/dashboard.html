@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Biometric Auth</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .info-section {
+            background: #f7f9fc;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #555;
+        }
+        .info-value {
+            color: #333;
+        }
+        .success-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            background: #d4edda;
+            color: #155724;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        button {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .logout-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Dashboard</h1>
+            <p class="subtitle">Welcome back! You are successfully authenticated.</p>
+            
+            <div class="info-section">
+                <div class="info-item">
+                    <span class="info-label">User ID:</span>
+                    <span class="info-value">{{.UserID}}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Display Name:</span>
+                    <span class="info-value">{{.DisplayName}}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Authentication Status:</span>
+                    <span class="success-badge">Authenticated via Biometrics</span>
+                </div>
+            </div>
+            
+            <form action="/logout" method="POST">
+                <button type="submit" class="logout-btn">Logout</button>
+            </form>
+        </div>
+        
+        <div class="card">
+            <h2 style="color: #333; margin-bottom: 16px;">About This Authentication</h2>
+            <p style="color: #666; line-height: 1.6; margin-bottom: 12px;">
+                You are authenticated using <strong>WebAuthn</strong> with biometric verification. 
+                Your private key never leaves your device and is stored securely in your device's secure enclave.
+            </p>
+            <p style="color: #666; line-height: 1.6;">
+                This authentication method supports Face ID, Touch ID, fingerprint scanners, and other platform authenticators.
+            </p>
+        </div>
+    </div>
+</body>
+</html>
