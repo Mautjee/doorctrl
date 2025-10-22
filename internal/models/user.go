@@ -1,7 +1,7 @@
 package models
 
 import (
-	"door-control/db"
+	"door-control/internal/db"
 
 	"github.com/go-webauthn/webauthn/webauthn"
 )

@@ -114,23 +114,42 @@
         <div class="card">
             <img src="/static/logo.jpg" alt="Waterhouse Studios" class="logo">
             <div class="studio-name">Waterhouse Studios</div>
-            <h1>✓ Access Granted</h1>
-            <p class="subtitle">Welcome to the studio! The door is now unlocked.</p>
+            <h1>Studio Access</h1>
+            <p class="subtitle">Welcome, {{.DisplayName}}!</p>
             
             <div class="info-section">
                 <div class="info-item">
                     <span class="info-label">Name:</span>
                     <span class="info-value">{{.DisplayName}}</span>
                 </div>
+                {{if .HasActiveBooking}}
                 <div class="info-item">
-                    <span class="info-label">Username:</span>
-                    <span class="info-value">{{.UserID}}</span>
+                    <span class="info-label">Current Booking:</span>
+                    <span class="success-badge">✓ Active Now</span>
                 </div>
                 <div class="info-item">
-                    <span class="info-label">Access Status:</span>
-                    <span class="success-badge">🔓 Door Unlocked</span>
+                    <span class="info-label">Time Slot:</span>
+                    <span class="info-value">{{.ActiveBooking.start_time}} - {{.ActiveBooking.end_time}}</span>
                 </div>
+                {{else}}
+                <div class="info-item">
+                    <span class="info-label">Current Booking:</span>
+                    <span class="error" style="background: #fee; color: #c33; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 600;">No Active Booking</span>
+                </div>
+                {{end}}
             </div>
+            
+            {{if .HasActiveBooking}}
+            <button type="button" id="unlockBtn" style="margin-bottom: 12px;">🔓 Unlock Door</button>
+            {{else}}
+            <button type="button" disabled style="margin-bottom: 12px; opacity: 0.5; cursor: not-allowed;">🔒 No Active Booking</button>
+            {{end}}
+            
+            <a href="/booking" style="display: block; margin-bottom: 12px;">
+                <button type="button">📅 New Booking</button>
+            </a>
+            
+            <div id="unlockMessage" style="margin-top: 12px;"></div>
             
             <form action="/logout" method="POST">
                 <button type="submit" class="logout-btn">End Session</button>
@@ -138,20 +157,73 @@
         </div>
         
         <div class="card">
-            <h2 style="color: #000; margin-bottom: 16px;">🎵 24-Hour Studio Access</h2>
-            <p style="color: #666; line-height: 1.6; margin-bottom: 12px;">
-                This is a proof-of-concept for secure studio access using <strong>WebAuthn biometric authentication</strong>.
-            </p>
-            <p style="color: #666; line-height: 1.6; margin-bottom: 12px;">
-                <strong>How it works:</strong>
-            </p>
-            <ul style="color: #666; line-height: 1.8; margin-left: 20px;">
-                <li>Scan the NFC tag on the door to open this page</li>
-                <li>Authenticate with Face ID or Touch ID</li>
-                <li>Server verifies your identity and unlocks the door</li>
-                <li>Your biometric data never leaves your device</li>
-            </ul>
+            <h2 style="color: #000; margin-bottom: 16px;">📅 Your Bookings</h2>
+            {{if .Bookings}}
+            <div style="text-align: left;">
+                {{range .Bookings}}
+                <div style="background: #f7f9fc; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong style="color: #000;">{{.start_time}}</strong>
+                        <span style="padding: 4px 12px; background: {{if eq .status "active"}}#d4edda{{else}}#f8d7da{{end}}; color: {{if eq .status "active"}}#155724{{else}}#721c24{{end}}; border-radius: 12px; font-size: 12px; font-weight: 600;">{{.status}}</span>
+                    </div>
+                    <div style="color: #666; font-size: 14px;">Until: {{.end_time}}</div>
+                </div>
+                {{end}}
+            </div>
+            {{else}}
+            <p style="color: #666;">No bookings yet. Create your first booking to access the studio!</p>
+            {{end}}
         </div>
     </div>
+    
+    <script>
+        const unlockBtn = document.getElementById('unlockBtn');
+        const unlockMessage = document.getElementById('unlockMessage');
+        
+        if (unlockBtn) {
+            unlockBtn.addEventListener('click', async () => {
+                unlockMessage.className = '';
+                unlockMessage.textContent = 'Checking location...';
+                unlockMessage.style.padding = '12px';
+                unlockMessage.style.borderRadius = '8px';
+                unlockMessage.style.fontSize = '14px';
+                
+                if (!navigator.geolocation) {
+                    unlockMessage.className = 'error';
+                    unlockMessage.textContent = 'Geolocation is not supported by your browser';
+                    return;
+                }
+                
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    try {
+                        const response = await fetch('/unlock', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                latitude: position.coords.latitude,
+                                longitude: position.coords.longitude
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.status === 'success') {
+                            unlockMessage.className = 'success';
+                            unlockMessage.textContent = '✓ ' + data.message;
+                        } else {
+                            unlockMessage.className = 'error';
+                            unlockMessage.textContent = '✗ ' + data.message;
+                        }
+                    } catch (error) {
+                        unlockMessage.className = 'error';
+                        unlockMessage.textContent = '✗ Error: ' + error.message;
+                    }
+                }, (error) => {
+                    unlockMessage.className = 'error';
+                    unlockMessage.textContent = '✗ Please enable location services';
+                });
+            });
+        }
+    </script>
 </body>
 </html>

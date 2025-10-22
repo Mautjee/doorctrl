@@ -108,3 +108,72 @@ func (db *DB) GetCredentialsByUserID(userID int64) ([][]byte, error) {
 	}
 	return credentials, nil
 }
+
+func (db *DB) CreateBooking(userID int64, startTime, endTime string) (int64, error) {
+	result, err := db.Exec(
+		"INSERT INTO bookings (user_id, start_time, end_time) VALUES (?, ?, ?)",
+		userID, startTime, endTime,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.LastInsertId()
+}
+
+func (db *DB) GetUserBookings(userID int64) ([]map[string]interface{}, error) {
+	rows, err := db.Query(
+		"SELECT id, start_time, end_time, status, created_at FROM bookings WHERE user_id = ? ORDER BY start_time DESC",
+		userID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var bookings []map[string]interface{}
+	for rows.Next() {
+		var id int64
+		var startTime, endTime, status, createdAt string
+		if err := rows.Scan(&id, &startTime, &endTime, &status, &createdAt); err != nil {
+			return nil, err
+		}
+		bookings = append(bookings, map[string]interface{}{
+			"id":         id,
+			"start_time": startTime,
+			"end_time":   endTime,
+			"status":     status,
+			"created_at": createdAt,
+		})
+	}
+	return bookings, nil
+}
+
+func (db *DB) GetActiveBooking(userID int64, currentTime string) (map[string]interface{}, error) {
+	var id int64
+	var startTime, endTime, status string
+	err := db.QueryRow(
+		"SELECT id, start_time, end_time, status FROM bookings WHERE user_id = ? AND start_time <= ? AND end_time >= ? AND status = 'active' LIMIT 1",
+		userID, currentTime, currentTime,
+	).Scan(&id, &startTime, &endTime, &status)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"id":         id,
+		"start_time": startTime,
+		"end_time":   endTime,
+		"status":     status,
+	}, nil
+}
+
+func (db *DB) CheckBookingConflict(userID int64, startTime, endTime string) (bool, error) {
+	var count int
+	err := db.QueryRow(
+		"SELECT COUNT(*) FROM bookings WHERE user_id = ? AND status = 'active' AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?) OR (start_time >= ? AND end_time <= ?))",
+		userID, endTime, startTime, startTime, startTime, startTime, endTime,
+	).Scan(&count)
+
+	return count > 0, err
+}

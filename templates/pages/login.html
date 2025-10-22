@@ -1,0 +1,74 @@
+{{define "title"}}Login{{end}}
+
+{{define "head"}}
+<script src="/static/js/webauthn.js"></script>
+{{end}}
+
+{{define "auth-content"}}
+<h1>Studio Access</h1>
+<p class="subtitle">Unlock the door with Face ID</p>
+
+<form id="loginForm">
+    <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required autocomplete="username">
+    </div>
+    
+    <button type="submit">🔓 Unlock Door</button>
+</form>
+
+<div id="message"></div>
+
+<div class="link">
+    <a href="/register">First time? Register for access</a>
+</div>
+{{end}}
+
+{{define "scripts"}}
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const messageDiv = document.getElementById('message');
+        
+        try {
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            
+            const beginResp = await fetch('/login/begin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            });
+            
+            if (!beginResp.ok) {
+                throw new Error(await beginResp.text());
+            }
+            
+            const options = await beginResp.json();
+            const assertion = await loginWithWebAuthn(options);
+            
+            const finishResp = await fetch('/login/finish', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(assertion)
+            });
+            
+            if (!finishResp.ok) {
+                throw new Error(await finishResp.text());
+            }
+            
+            messageDiv.className = 'message success';
+            messageDiv.textContent = '✓ Authenticated! Opening door...';
+            setTimeout(() => window.location.href = '/dashboard', 1500);
+            
+        } catch (error) {
+            messageDiv.className = 'message error';
+            messageDiv.textContent = '✗ Access denied: ' + error.message;
+        }
+    });
+</script>
+{{end}}
+
+{{template "auth-layout" .}}

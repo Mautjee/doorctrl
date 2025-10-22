@@ -1,17 +1,22 @@
 package main
 
 import (
-	"door-control/db"
-	"door-control/handlers"
+	"door-control/internal/db"
+	"door-control/internal/routes"
 	"html/template"
 	"log"
 	"net/http"
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/gorilla/sessions"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using environment variables")
+	}
+
 	database, err := db.InitDB("./door-control.db")
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
@@ -40,42 +45,7 @@ func main() {
 
 	tmpl := template.Must(template.ParseGlob("templates/*.html"))
 
-	registerHandler := &handlers.RegisterHandler{
-		DB:        database,
-		WebAuthn:  webAuthn,
-		Store:     store,
-		Templates: tmpl,
-	}
-
-	loginHandler := &handlers.LoginHandler{
-		DB:        database,
-		WebAuthn:  webAuthn,
-		Store:     store,
-		Templates: tmpl,
-	}
-
-	dashboardHandler := &handlers.DashboardHandler{
-		DB:        database,
-		Store:     store,
-		Templates: tmpl,
-	}
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
-	})
-
-	http.HandleFunc("/register", registerHandler.RegisterPage)
-	http.HandleFunc("/register/begin", registerHandler.BeginRegistration)
-	http.HandleFunc("/register/finish", registerHandler.FinishRegistration)
-
-	http.HandleFunc("/login", loginHandler.LoginPage)
-	http.HandleFunc("/login/begin", loginHandler.BeginLogin)
-	http.HandleFunc("/login/finish", loginHandler.FinishLogin)
-	http.HandleFunc("/logout", loginHandler.Logout)
-
-	http.HandleFunc("/dashboard", dashboardHandler.Dashboard)
-
-	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+	routes.Setup(database, webAuthn, store, tmpl)
 
 	log.Println("Server starting on :8080")
 	log.Println("Production URL: https://doorctrl.sooth.dev")

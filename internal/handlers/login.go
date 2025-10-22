@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"door-control/db"
-	"door-control/models"
+	"door-control/internal/db"
+	"door-control/internal/models"
 	"encoding/json"
 	"html/template"
 	"log"
@@ -133,6 +133,7 @@ func (h *LoginHandler) FinishLogin(w http.ResponseWriter, r *http.Request) {
 	delete(sess.Values, "authentication")
 	sess.Values["authenticated"] = true
 	sess.Values["userID"] = userID
+	sess.Values["username"] = string(sessionDataStruct.UserID)
 	sess.Save(r, w)
 
 	w.Header().Set("Content-Type", "application/json")

@@ -1,9 +1,11 @@
 package handlers
 
 import (
-	"door-control/db"
+	"door-control/internal/db"
 	"html/template"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/sessions"
 )
@@ -33,14 +35,32 @@ func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, displayName, err := h.DB.GetUserByUsername("")
+	username, ok := sess.Values["username"].(string)
+	if !ok {
+		username = ""
+	}
+
+	_, displayName, err := h.DB.GetUserByUsername(username)
 	if err != nil {
 		displayName = "User"
 	}
 
+	bookings, err := h.DB.GetUserBookings(userID)
+	if err != nil {
+		log.Printf("Error getting bookings: %v", err)
+		bookings = []map[string]interface{}{}
+	}
+
+	currentTime := time.Now().Format("2006-01-02 15:04:05")
+	activeBooking, err := h.DB.GetActiveBooking(userID, currentTime)
+	hasActiveBooking := err == nil && activeBooking != nil
+
 	data := map[string]interface{}{
-		"UserID":      userID,
-		"DisplayName": displayName,
+		"UserID":           userID,
+		"DisplayName":      displayName,
+		"Bookings":         bookings,
+		"HasActiveBooking": hasActiveBooking,
+		"ActiveBooking":    activeBooking,
 	}
 
 	h.Templates.ExecuteTemplate(w, "dashboard.html", data)

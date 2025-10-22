@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"database/sql"
-	"door-control/db"
-	"door-control/models"
+	"door-control/internal/db"
+	"door-control/internal/models"
 	"encoding/json"
 	"html/template"
 	"log"
