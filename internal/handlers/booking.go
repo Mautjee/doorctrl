@@ -162,9 +162,12 @@ func (h *BookingHandler) UnlockDoor(w http.ResponseWriter, r *http.Request) {
 	if distance > maxDistanceKm {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":   "error",
-			"message":  "Please go to the front door for the door to open.",
-			"distance": distance,
+			"status":        "error",
+			"message":       "Please go to the front door for the door to open.",
+			"distance":      distance,
+			"show_navigate": true,
+			"studio_lat":    studioLat,
+			"studio_lon":    studioLon,
 		})
 		return
 	}
