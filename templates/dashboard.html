@@ -305,14 +305,19 @@
                             unlockMessage.className = 'error';
                             unlockMessage.innerHTML = '✗ ' + data.message;
                             
-                            if (data.show_navigate && data.studio_lat && data.studio_lon) {
+                            if (data.show_navigate && data.maps_url) {
                                 const navBtn = document.createElement('a');
-                                navBtn.href = `https://maps.google.com/maps?q=${data.studio_lat},${data.studio_lon}`;
+                                navBtn.href = data.maps_url;
                                 navBtn.target = '_blank';
                                 navBtn.style.cssText = 'display: block; margin-top: 12px; padding: 12px; background: #4285F4; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; text-align: center;';
                                 navBtn.textContent = '🧭 Navigate to Studio';
                                 unlockMessage.appendChild(navBtn);
                             }
+                        }
+                    } catch (error) {
+                        unlockMessage.className = 'error';
+                        unlockMessage.textContent = '✗ Error: ' + error.message;
+                    }
                         }
                     } catch (error) {
                             unlockMessage.className = 'error';
