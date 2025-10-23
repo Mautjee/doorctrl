@@ -22,6 +22,7 @@ type RegisterHandler struct {
 }
 
 func (h *RegisterHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Registration page accessed from IP: %s", r.RemoteAddr)
 	h.Templates.ExecuteTemplate(w, "register.html", nil)
 }
 
@@ -29,13 +30,17 @@ func (h *RegisterHandler) BeginRegistration(w http.ResponseWriter, r *http.Reque
 	username := r.FormValue("username")
 	displayName := r.FormValue("displayName")
 
+	log.Printf("Registration attempt for username: %s from IP: %s", username, r.RemoteAddr)
+
 	if username == "" || displayName == "" {
+		log.Printf("Registration failed: missing username or display name from IP: %s", r.RemoteAddr)
 		http.Error(w, "Username and display name required", http.StatusBadRequest)
 		return
 	}
 
 	userID, _, err := h.DB.GetUserByUsername(username)
 	if err == nil {
+		log.Printf("Registration failed: user %s already exists from IP: %s", username, r.RemoteAddr)
 		http.Error(w, "User already exists", http.StatusConflict)
 		return
 	}
@@ -48,10 +53,12 @@ func (h *RegisterHandler) BeginRegistration(w http.ResponseWriter, r *http.Reque
 
 	userID, err = h.DB.CreateUser(username, displayName, time.Now().Unix())
 	if err != nil {
-		log.Printf("Error creating user: %v", err)
+		log.Printf("Error creating user %s: %v", username, err)
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
 	}
+
+	log.Printf("User created successfully: %s (ID: %d)", username, userID)
 
 	user := models.User{
 		ID:          userID,
@@ -125,14 +132,17 @@ func (h *RegisterHandler) FinishRegistration(w http.ResponseWriter, r *http.Requ
 	}
 
 	if err := h.DB.SaveCredential(userID, credential.ID, credential.PublicKey, credential.Flags.BackupEligible, credential.Flags.BackupState, time.Now().Unix()); err != nil {
-		log.Printf("Error saving credential: %v", err)
+		log.Printf("Error saving credential for user ID %d: %v", userID, err)
 		http.Error(w, "Failed to save credential", http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("Registration completed successfully for user ID %d (%s)", userID, string(sessionDataStruct.UserID))
+
 	delete(sess.Values, "registration")
 	sess.Values["authenticated"] = true
 	sess.Values["userID"] = userID
+	sess.Values["username"] = string(sessionDataStruct.UserID)
 	sess.Save(r, w)
 
 	w.Header().Set("Content-Type", "application/json")

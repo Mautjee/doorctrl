@@ -3,14 +3,19 @@ package routes
 import (
 	"door-control/internal/db"
 	"door-control/internal/handlers"
+	"door-control/internal/middleware"
 	"html/template"
 	"net/http"
+	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/gorilla/sessions"
+	"golang.org/x/time/rate"
 )
 
 func Setup(database *db.DB, webAuthn *webauthn.WebAuthn, store *sessions.CookieStore, tmpl *template.Template) {
+	limiter := middleware.NewIPRateLimiter(rate.Every(1*time.Second), 5)
+
 	registerHandler := &handlers.RegisterHandler{
 		DB:        database,
 		WebAuthn:  webAuthn,
@@ -42,12 +47,12 @@ func Setup(database *db.DB, webAuthn *webauthn.WebAuthn, store *sessions.CookieS
 	})
 
 	http.HandleFunc("/register", registerHandler.RegisterPage)
-	http.HandleFunc("/register/begin", registerHandler.BeginRegistration)
-	http.HandleFunc("/register/finish", registerHandler.FinishRegistration)
+	http.HandleFunc("/register/begin", limiter.Limit(registerHandler.BeginRegistration))
+	http.HandleFunc("/register/finish", limiter.Limit(registerHandler.FinishRegistration))
 
 	http.HandleFunc("/login", loginHandler.LoginPage)
-	http.HandleFunc("/login/begin", loginHandler.BeginLogin)
-	http.HandleFunc("/login/finish", loginHandler.FinishLogin)
+	http.HandleFunc("/login/begin", limiter.Limit(loginHandler.BeginLogin))
+	http.HandleFunc("/login/finish", limiter.Limit(loginHandler.FinishLogin))
 	http.HandleFunc("/logout", loginHandler.Logout)
 
 	http.HandleFunc("/dashboard", dashboardHandler.Dashboard)

@@ -6,11 +6,22 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 )
+
+func getEnvFloat(key string, defaultVal float64) float64 {
+	if val := os.Getenv(key); val != "" {
+		if parsed, err := strconv.ParseFloat(val, 64); err == nil {
+			return parsed
+		}
+	}
+	return defaultVal
+}
 
 func main() {
 	if err := godotenv.Load(); err != nil {
@@ -34,7 +45,13 @@ func main() {
 		log.Fatalf("Failed to create WebAuthn: %v", err)
 	}
 
-	store := sessions.NewCookieStore([]byte("super-secret-key-change-in-production"))
+	sessionSecret := []byte("super-secret-key-change-in-production")
+	if envSecret := []byte(os.Getenv("SESSION_SECRET")); len(envSecret) > 0 {
+		sessionSecret = envSecret
+	} else {
+		log.Println("WARNING: Using default SESSION_SECRET. Set SESSION_SECRET environment variable in production!")
+	}
+	store := sessions.NewCookieStore(sessionSecret)
 	store.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   3600 * 24,
@@ -47,8 +64,17 @@ func main() {
 
 	routes.Setup(database, webAuthn, store, tmpl)
 
-	log.Println("Server starting on :8080")
+	log.Println("========================================")
+	log.Println("Door Control System Starting")
+	log.Println("========================================")
+	log.Println("Server listening on :8080")
 	log.Println("Production URL: https://doorctrl.sooth.dev")
 	log.Println("Local access: http://localhost:8080")
+	log.Printf("WebAuthn RPID: %s", wconfig.RPID)
+	log.Printf("Rate limiting: 5 requests per second per IP")
+	log.Printf("Studio location: %.6f, %.6f",
+		getEnvFloat("STUDIO_LATITUDE", 0),
+		getEnvFloat("STUDIO_LONGITUDE", 0))
+	log.Println("========================================")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

@@ -20,23 +20,29 @@ type LoginHandler struct {
 }
 
 func (h *LoginHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Login page accessed from IP: %s", r.RemoteAddr)
 	h.Templates.ExecuteTemplate(w, "login.html", nil)
 }
 
 func (h *LoginHandler) BeginLogin(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 
+	log.Printf("Login attempt for username: %s from IP: %s", username, r.RemoteAddr)
+
 	if username == "" {
+		log.Printf("Login failed: missing username from IP: %s", r.RemoteAddr)
 		http.Error(w, "Username required", http.StatusBadRequest)
 		return
 	}
 
 	userID, displayName, err := h.DB.GetUserByUsername(username)
 	if err != nil {
-		log.Printf("User not found: %v", err)
+		log.Printf("Login failed: user %s not found from IP: %s - %v", username, r.RemoteAddr, err)
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
 	}
+
+	log.Printf("User %s (ID: %d) found, beginning WebAuthn authentication", username, userID)
 
 	credentials, err := models.LoadUserCredentials(h.DB, userID)
 	if err != nil {
@@ -117,18 +123,20 @@ func (h *LoginHandler) FinishLogin(w http.ResponseWriter, r *http.Request) {
 
 	credential, err := h.WebAuthn.FinishLogin(user, sessionDataStruct, r)
 	if err != nil {
-		log.Printf("Error finishing login: %v", err)
+		log.Printf("Login failed for user ID %d: WebAuthn authentication error - %v", userID, err)
 		http.Error(w, "Failed to finish login", http.StatusInternalServerError)
 		return
 	}
 
 	if credential.Authenticator.CloneWarning {
-		log.Printf("Clone warning for credential: %v", credential.ID)
+		log.Printf("WARNING: Clone detected for credential ID: %x (User ID: %d)", credential.ID, userID)
 	}
 
 	if err := h.DB.UpdateSignCount(credential.ID, int(credential.Authenticator.SignCount)); err != nil {
-		log.Printf("Error updating sign count: %v", err)
+		log.Printf("Error updating sign count for user ID %d: %v", userID, err)
 	}
+
+	log.Printf("Login successful for user ID %d (%s) from IP: %s", userID, string(sessionDataStruct.UserID), r.RemoteAddr)
 
 	delete(sess.Values, "authentication")
 	sess.Values["authenticated"] = true
@@ -142,8 +150,13 @@ func (h *LoginHandler) FinishLogin(w http.ResponseWriter, r *http.Request) {
 
 func (h *LoginHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	sess, _ := h.Store.Get(r, "webauthn-session")
+	userID, _ := sess.Values["userID"].(int64)
+
+	log.Printf("User logged out - User ID: %d, IP: %s", userID, r.RemoteAddr)
+
 	sess.Values["authenticated"] = false
 	delete(sess.Values, "userID")
+	delete(sess.Values, "username")
 	sess.Save(r, w)
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }

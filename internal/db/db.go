@@ -60,6 +60,15 @@ func (db *DB) GetUserByUsername(username string) (int64, string, error) {
 	return id, displayName, err
 }
 
+func (db *DB) GetUserByID(userID int64) (string, string, error) {
+	var username, displayName string
+	err := db.QueryRow(
+		"SELECT username, display_name FROM users WHERE id = ?",
+		userID,
+	).Scan(&username, &displayName)
+	return username, displayName, err
+}
+
 func (db *DB) SaveCredential(userID int64, credentialID, publicKey []byte, backupEligible, backupState bool, createdAt int64) error {
 	_, err := db.Exec(
 		"INSERT INTO credentials (user_id, credential_id, public_key, backup_eligible, backup_state, created_at) VALUES (?, ?, ?, ?, ?, ?)",

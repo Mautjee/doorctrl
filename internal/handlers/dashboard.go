@@ -19,29 +19,30 @@ type DashboardHandler struct {
 func (h *DashboardHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 	sess, err := h.Store.Get(r, "webauthn-session")
 	if err != nil {
+		log.Printf("Dashboard access denied: session error from IP: %s - %v", r.RemoteAddr, err)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	authenticated, ok := sess.Values["authenticated"].(bool)
 	if !ok || !authenticated {
+		log.Printf("Dashboard access denied: not authenticated from IP: %s", r.RemoteAddr)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	userID, ok := sess.Values["userID"].(int64)
 	if !ok {
+		log.Printf("Dashboard access denied: invalid user ID from IP: %s", r.RemoteAddr)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
-	username, ok := sess.Values["username"].(string)
-	if !ok {
-		username = ""
-	}
+	log.Printf("Dashboard accessed by user ID: %d from IP: %s", userID, r.RemoteAddr)
 
-	_, displayName, err := h.DB.GetUserByUsername(username)
+	_, displayName, err := h.DB.GetUserByID(userID)
 	if err != nil {
+		log.Printf("Error getting user: %v", err)
 		displayName = "User"
 	}
 
